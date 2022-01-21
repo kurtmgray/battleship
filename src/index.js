@@ -132,9 +132,9 @@ const Gameboard = (size) => {
             row.forEach(position => {
                 if (coordinate === position.column + position.row && position.occupied) {
                     position.hit = true
-                    position.miss = false
                     console.log('hit!')
-                } else {
+                } else if (coordinate === position.column + position.row && !position.occupied) {
+                    position.miss = true
                     console.log('miss')
                 }
             })
