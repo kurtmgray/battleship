@@ -20,8 +20,6 @@ const Ship = (len) => {
 }
 
 const Gameboard = (size) => {
-    // how to "place" a ship at a certain point in the array using Ship()??
-    // 
     const ships = []
     const board = []
     const createShips = () => {
@@ -90,11 +88,10 @@ const Gameboard = (size) => {
             
             // if a space is not occupied, AND if the next (length) places are not occupied, place the ship at the startingCoordinate...
             const placeShip= () => {
-                board.forEach(rowArr => {
-                    rowArr.forEach(position => {
+                board.forEach(row => {
+                    row.forEach(position => {
                         // prevents randomly generated starting coordinate from being placed on an occupied space 
                         while ((position.column + position.row) === (columnLetter + rowNumber) && position.occupied) {
-                            console.log('while')
                             generateRandomStartingCoordinate(size)
                         }  
                         // prevents a horizontal ship from starting too close to right side, push a valid coordinate to the gridLocation array
@@ -119,7 +116,6 @@ const Gameboard = (size) => {
                         }
                         // marks position.occupied true so next ship isn't 
                         if (position.occupied) {
-                            console.log(position.column + position.row + ' is occupied')
                             generateRandomStartingCoordinate()
                         } else if (ship.gridLocation.indexOf(position.column + position.row) !== -1) {
                             position.occupied = true
@@ -127,22 +123,40 @@ const Gameboard = (size) => {
                     })    
                 })  
             }
-            generateRandomStartingCoordinate()
-            placeShip()            
+        generateRandomStartingCoordinate()
+        placeShip()            
         })    
     }
+    const receiveAttack = (coordinate) => {
+        board.forEach(row => {
+            row.forEach(position => {
+                if (coordinate === position.column + position.row && position.occupied) {
+                    position.hit = true
+                    position.miss = false
+                    console.log('hit!')
+                } else {
+                    console.log('miss')
+                }
+            })
+        })   
+    }
     placeShips(size)
-    console.log(board)
-    console.log(ships)
-
 
     return {
         board,  
-        ships
+        ships, 
+        receiveAttack
     }
 }
 
-Gameboard(10)
+// const Player = 
+
+const userBoard = Gameboard(10)
+console.log(userBoard.board)
+console.log(userBoard.ships)
+userBoard.receiveAttack('B2')
+
+const enemyBoard = Gameboard(10)
 
 exports.Ship = Ship
 exports.Gameboard = Gameboard
