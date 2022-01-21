@@ -1,0 +1,31 @@
+{
+  "name": "battleship",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest",
+    "testwatch": "jest --watch *.js",
+    "watch": "watch",
+    "build": "webpack"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kurtmgray/battleship.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/kurtmgray/battleship/issues"
+  },
+  "homepage": "https://github.com/kurtmgray/battleship#readme",
+  "devDependencies": {
+    "@babel/preset-env": "^7.16.8",
+    "jest": "^27.4.7",
+    "webpack": "^5.66.0",
+    "webpack-cli": "^4.9.1"
+  },
+  "dependencies": {
+    "nodemon": "^2.0.15"
+  },
+  "description": ""
+}
