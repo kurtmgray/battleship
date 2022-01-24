@@ -1,3 +1,6 @@
+import './style.css'
+
+
 const Ship = (len) => {
     return {
         length: len,
@@ -5,15 +8,19 @@ const Ship = (len) => {
         sunk: false,
         orientation: undefined,
         gridLocation: [],
-        hit(num) {
-            if(num - 1 < this.length && !this.hitLocation.includes(num)) {
-                this.hitLocation.push(num)
+        hit(x, y) {
+            if(!this.hitLocation.includes(x + y) && this.gridLocation.includes(x + y)) {
+                this.hitLocation.push(x + y)
+                console.log('hit match')
+                console.log(this.hitLocation)
+                console.log(this.gridLocation)
             }
             this.isSunk()
         },
         isSunk() {
             if(this.hitLocation.length === this.length) {
                 this.sunk = true
+                console.log('sunk!')
             }
         },
     }       
@@ -22,6 +29,7 @@ const Ship = (len) => {
 const Gameboard = (size) => {
     const ships = []
     const board = []
+    const moves = []
     const createShips = () => {
         const oneShipOne = Ship(1);
         const oneShipTwo = Ship(1);
@@ -54,8 +62,9 @@ const Gameboard = (size) => {
             const yArr = [] 
             for(let x = 0; x < size; x++){
                 const xArr = {
-                    column: String.fromCharCode(65 + x),
-                    row: y,
+                    index: '' + x + y,
+                    column: '' + x,
+                    row: '' + y,
                     occupied: false,
                     hit: false,
                     miss: false
@@ -68,7 +77,6 @@ const Gameboard = (size) => {
     createBoard(size)
 
 
-    // THIS WHOLE THING IS A TIGHTLY COUPLED MESS
     const placeShips = (size) => {
         ships.forEach(ship => {
             const orientation = Boolean(Math.round(Math.random()))
@@ -78,62 +86,66 @@ const Gameboard = (size) => {
                 ship.orientation = 'vertical'
             }
             
-            // create random numbers between 0 and size to define starting point
-            let columnLetter, columnLetterCharCode, rowNumber
-            const generateRandomStartingCoordinate = () => {
-                columnLetter = String.fromCharCode(Math.floor(Math.random() * size) + 65)
-                columnLetterCharCode = columnLetter.charCodeAt(0)
-                rowNumber = Math.floor(Math.random() * size)
+            let x, y 
+            const generateNewStartingCoordinate = (size) => {
+                x = '' + Math.floor(Math.random() * size)
+                y = '' + Math.floor(Math.random() * size)
             }
-            
-            // if a space is not occupied, AND if the next (length) places are not occupied, place the ship at the startingCoordinate...
-            const placeShip= () => {
+
+            const placeShip = () => {
+                generateNewStartingCoordinate(size)
                 board.forEach(row => {
                     row.forEach(position => {
-                        // prevents randomly generated starting coordinate from being placed on an occupied space 
-                        while ((position.column + position.row) === (columnLetter + rowNumber) && position.occupied) {
-                            generateRandomStartingCoordinate(size)
+                        while (position.index === x + y && position.occupied) {
+                            generateNewStartingCoordinate(size)
                         }  
-                        // prevents a horizontal ship from starting too close to right side, push a valid coordinate to the gridLocation array
-                        if (ship.orientation === 'horizontal' && (size - (columnLetterCharCode - 65)) < ship.length) {
-                            generateRandomStartingCoordinate(size)
-                        } else if (ship.orientation === 'horizontal' && size - ship.length >= (columnLetterCharCode - 65)){ 
+                        if (ship.orientation === 'horizontal' && size - x < ship.length) {
+                            generateNewStartingCoordinate(size)
+                        } else if (ship.orientation === 'horizontal' && size - ship.length >= x){ 
                             for(let i = 0 ; i < ship.length; i++) {
                                 if (ship.gridLocation.length < ship.length){
-                                    ship.gridLocation.push(String.fromCharCode((columnLetterCharCode + i)) + rowNumber)
+                                    ship.gridLocation.push((parseInt(x) + i) + y)
                                 } 
                             }
                         }
-                        // prevents a vertical ship from starting too close to bottom, push a valid coordinate to the gridLocation array
-                        if (ship.orientation === 'vertical' && (size - rowNumber) < ship.length) {
-                            generateRandomStartingCoordinate(size)
-                        } else if (ship.orientation === 'vertical' && size - ship.length >= rowNumber) {                            
+                        if (ship.orientation === 'vertical' && size - y < ship.length) {
+                            generateNewStartingCoordinate(size)
+                        } else if (ship.orientation === 'vertical' && size - ship.length >= y) {                            
                             for(let i = 0 ; i < ship.length; i++) {
                                 if (ship.gridLocation.length < ship.length){
-                                    ship.gridLocation.push((columnLetter + (rowNumber + i)))
+                                    ship.gridLocation.push((x + (parseInt(y) + i)))
                                 }    
                             }
                         }
-                        // marks position.occupied true so next ship isn't 
                         if (position.occupied) {
-                            generateRandomStartingCoordinate()
-                        } else if (ship.gridLocation.indexOf(position.column + position.row) !== -1) {
+                            generateNewStartingCoordinate(size)
+                        // } else if (// for loop to check for (length) spaces to the right (column values)) {
+                        // //another for loop to check for (length) spaces below (row values) for occupied spaces
+                        } else if (ship.gridLocation.indexOf(position.index) !== -1) {
                             position.occupied = true
                         }
                     })    
                 })  
             }
-        generateRandomStartingCoordinate()
+        generateNewStartingCoordinate()
         placeShip()            
-        })    
+        })
+        return {size}    
     }
-    const receiveAttack = (coordinate) => {
+    
+    const receiveAttack = (attack) => {
+        const {x, y} = attack
         board.forEach(row => {
             row.forEach(position => {
-                if (coordinate === position.column + position.row && position.occupied) {
+                if (x + y === position.index && position.occupied) {
                     position.hit = true
+                    ships.forEach(ship => {
+                        if (ship.gridLocation.indexOf(x + y) !== -1) {
+                            ship.hit(x, y)
+                        }
+                    })
                     console.log('hit!')
-                } else if (coordinate === position.column + position.row && !position.occupied) {
+                } else if (x + y === position.index && !position.occupied) {
                     position.miss = true
                     console.log('miss')
                 }
@@ -144,19 +156,186 @@ const Gameboard = (size) => {
 
     return {
         board,  
-        ships, 
-        receiveAttack
+        ships,
+        moves,
+        size,
+        receiveAttack,
     }
 }
 
-// const Player = 
 
-const userBoard = Gameboard(10)
-console.log(userBoard.board)
-console.log(userBoard.ships)
-userBoard.receiveAttack('B2')
 
-const enemyBoard = Gameboard(10)
+const Player = (name) => {
+    return {
+        active: false,
+        attack(e) {
+            const x = e.target.dataset.index.charAt(0)
+            const y = e.target.dataset.index.charAt(1)
+            return {x, y}
+        },
+        randomAttack(size) {
+            const x = '' + Math.floor(Math.random() * size)
+            const y = '' + Math.floor(Math.random() * size)
+            return {x, y}
+        }
+    }
+}
 
-exports.Ship = Ship
-exports.Gameboard = Gameboard
+
+
+
+// UI
+const contentDIV = document.querySelector('.content')
+const boardsDIV = document.querySelector('.boards-wrapper')
+const userBoardDIV = document.querySelector('.user-board')
+const enemyBoardDIV = document.querySelector('.enemy-board')
+
+const playGame = () => {
+    const enemyBoard = Gameboard(10)
+    const userBoard = Gameboard(10)
+    console.log(userBoard.board)
+    console.log(userBoard)
+    const enemy = Player('Computer')
+    const user = Player('Kurt')
+
+    const createBoardUI = (userBoard, enemyBoard) => {
+        userBoard.board.forEach(row => {
+            row.forEach(position => {
+                const square = document.createElement('div')
+                square.classList.add('user-position')
+                square.innerText = position.column + position.row
+                square.dataset.index = position.column + position.row
+                userBoardDIV.appendChild(square)
+    
+                if(position.occupied){
+                    square.classList.add('user-occupied')
+                }
+            })
+        })
+        enemyBoard.board.forEach(row => {
+            row.forEach(position => {
+                const square = document.createElement('div')
+                square.classList.add('enemy-position')
+                square.innerText = position.column + position.row
+                square.dataset.index = position.column + position.row
+                enemyBoardDIV.appendChild(square)
+                
+                if(position.occupied){
+                    square.classList.add('enemy-occupied')
+                }
+            })
+        })    
+    }
+
+    const updateUI = () => {
+        const userPositionsNL = document.querySelectorAll('.user-position')
+        const userPositions = Array.from(userPositionsNL)
+        const enemyPositionsNL = document.querySelectorAll('.enemy-position')
+        const enemyPositions = Array.from(enemyPositionsNL)
+        enemyBoard.board.forEach(row => {
+            row.forEach(position => {
+                if (position.hit) {
+                    enemyPositions.forEach(div => {
+                        if(position.index === div.dataset.index) {
+                            div.classList.add('hit')
+                        }
+                    })
+                } else if (position.miss) {
+                    enemyPositions.forEach(div => {
+                        if(position.index === div.dataset.index) {
+                            div.classList.add('miss')
+                        }
+                    })
+                }
+            });
+        })
+        userBoard.board.forEach(row => {
+            row.forEach(position => {
+                if (position.hit) {
+                    userPositions.forEach(div => {
+                        if(position.index === div.dataset.index) {
+                            div.classList.add('hit')
+                        }
+                    })
+                } else if (position.miss) {
+                    userPositions.forEach(div => {
+                        if(position.index === div.dataset.index) {
+                            div.classList.add('miss')
+                        }
+                    })
+                }
+            });
+        })
+    }
+    
+    const computerMove = () => {
+        let coordinates = enemy.randomAttack(userBoard.size)
+        let { x, y } = coordinates 
+        console.log(userBoard.moves)
+        
+        
+        // infinte loop, how fix?
+        while (userBoard.moves.includes(x + y)){
+            coordinates = enemy.randomAttack(userBoard.size)
+            let { x, y } = coordinates
+            console.log('duplicate')
+        }
+            
+        userBoard.board.forEach(row => {
+            row.forEach(position => {
+                if (position.index === x + y && position.occupied) {
+                    position.hit = true
+                    userBoard.ships.forEach(ship => {
+                        ship.hit(x,y)
+                    })
+                } else if (position.index === x + y && !position.occupied) {
+                    position.miss = true
+                    enemy.active = false
+                    user.active = true
+                }
+            })
+        })
+        userBoard.moves.push(x + y)
+        updateUI()
+    }
+    
+    const userMove = () => {
+        enemyBoardDIV.addEventListener('click', (e) => {
+            enemyBoardDIV.removeEventListener('click', userMove)
+            const coordinates = user.attack(e)
+            const {x,y} = coordinates
+            enemyBoard.board.forEach(row => {
+                row.forEach(position => {
+                    if (position.index === x + y && position.occupied) {
+                        position.hit = true
+                        enemyBoard.ships.forEach(ship => {
+                            ship.hit(x,y)
+                        })
+                    } else if (position.index === x + y && !position.occupied) {
+                        console.log('miss')
+                        position.miss = true
+                        user.active = false
+                        enemy.active = true
+                        computerMove()                        
+                    }
+                })
+            })
+            enemyBoard.moves.push(x + y)
+            updateUI()
+
+        })
+    }
+    userMove()
+
+    
+
+    createBoardUI(userBoard, enemyBoard)
+    // user.active = true
+    // if (user.active) {
+    //     userMove()
+    // } else if (enemy.active) {
+    //     computerMove()
+    // }
+}
+
+playGame()

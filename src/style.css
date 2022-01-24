@@ -1,0 +1,60 @@
+body {
+    margin: 40px;
+  }
+
+.boards-wrapper {
+    display: flex;
+    justify-content: space-around;
+    width: 1500px;
+    height: 600px;
+}
+
+.user-board, 
+.enemy-board {
+    display: grid;
+    grid-template-columns: 50px 50px 50px 50px 50px 50px 50px 50px 50px 50px;
+    grid-template-rows: 50px 50px 50px 50px 50px 50px 50px 50px 50px 50px;
+    background-color: #fff;
+    color: rgb(145, 101, 101);
+}
+
+.user-position,
+.enemy-position,
+.occupied,
+.hit, 
+.miss {
+    color: #fff;
+    border: 1px solid;
+    border-color: white;
+    padding: 20px;
+    font-size: 10%;
+}
+
+.user-position {
+    background-color: rgb(129, 129, 129);
+
+}
+
+.enemy-position,
+.enemy-occupied {
+    background-color: rgb(129, 129, 129);
+
+}
+
+
+
+
+.user-occupied {
+    background-color: rgb(0, 0, 0);
+
+}
+
+.hit {
+    background-color: rgb(250, 58, 0);
+
+} 
+
+.miss {
+    background-color: rgb(0, 108, 250);
+
+} 
