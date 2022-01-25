@@ -12,16 +12,12 @@ const Ship = (len) => {
         hit(x, y) {
             if(!this.hitLocation.includes(x + y) && this.gridLocation.includes(x + y)) {
                 this.hitLocation.push(x + y)
-                console.log('hit match')
-                console.log(this.hitLocation)
-                console.log(this.gridLocation)
             }
             this.isSunk()
         },
         isSunk() {
             if(this.hitLocation.length === this.length) {
                 this.sunk = true
-                console.log('sunk!')
             }
         },
     }       
@@ -56,8 +52,7 @@ const Gameboard = (size) => {
         )
 
     }
-    createShips()
-
+    
     const createBoard = (size) => {
         for(let y = 0; y < size; y++){
             const yArr = [] 
@@ -75,9 +70,7 @@ const Gameboard = (size) => {
             board.push(yArr)
         }
     }
-    createBoard(size)
-
-
+    
     const placeShips = (size) => {
         ships.forEach(ship => {
             const orientation = Boolean(Math.round(Math.random()))
@@ -154,12 +147,15 @@ const Gameboard = (size) => {
         })
         return result
     }
-    placeShips(size)
 
     const gameOver = () => {
         return ships.every(ship => ship.sunk)
     }
     
+    createShips()
+    createBoard(size)
+    placeShips(size)
+
     return {
         board,  
         ships,
@@ -197,9 +193,7 @@ const enemyBoardDIV = document.querySelector('.enemy-board')
 const Game = () => {
     const enemyBoard = Gameboard(10)
     const userBoard = Gameboard(10)
-    const boards = [userBoard, enemyBoard]
-    console.log(boards)
-    console.log(userBoard)
+
     const enemy = Player('Computer')
     const user = Player('Kurt')
     user.active = true
@@ -277,7 +271,6 @@ const Game = () => {
     }
     
     // util
-    
     const gameMoves = async () => {
         
         const computerMove = () => {
@@ -299,13 +292,10 @@ const Game = () => {
         return result
     }
     
-    
     const gameLoop = async () => {
         while (true) {
-        
             let otherBoard
             user.active ? otherBoard = enemyBoard : otherBoard = userBoard
-            
             while (true) {
                 const {x, y} = await gameMoves()
                 const result = otherBoard.receiveAttack(x, y)
@@ -326,16 +316,14 @@ const Game = () => {
                     break
                 }  
             }
-
             const activeWin = otherBoard.gameOver()
             if (activeWin) {
                 return user.active ? user.name : enemy.name
             }
         }            
     }
-
-   return {
-       gameLoop
+    return {
+        gameLoop
     }
 }
 
