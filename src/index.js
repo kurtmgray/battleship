@@ -1,5 +1,6 @@
-import './style.css'
+// handle edge cases, organize
 
+import './style.css'
 
 const Ship = (len) => {
     return {
@@ -133,40 +134,45 @@ const Gameboard = (size) => {
         return {size}    
     }
     
-    const receiveAttack = (attack) => {
-        const {x, y} = attack
+    const receiveAttack = (x, y) => {
+        let result
         board.forEach(row => {
             row.forEach(position => {
-                if (x + y === position.index && position.occupied) {
+                if (position.index === x + y && position.occupied && !position.hit) {
                     position.hit = true
                     ships.forEach(ship => {
-                        if (ship.gridLocation.indexOf(x + y) !== -1) {
-                            ship.hit(x, y)
-                        }
+                        ship.hit(x,y)
                     })
-                    console.log('hit!')
-                } else if (x + y === position.index && !position.occupied) {
+                    result = 'hit'
+                } else if (position.index === x + y && !position.occupied && !position.miss) {
                     position.miss = true
-                    console.log('miss')
+                    result = 'miss'               
+                } else if (position.index === x + y && (position.hit || position.miss)){
+                    result = false
                 }
             })
-        })   
+        })
+        return result
     }
     placeShips(size)
 
+    const gameOver = () => {
+        return ships.every(ship => ship.sunk)
+    }
+    
     return {
         board,  
         ships,
         moves,
         size,
+        gameOver,
         receiveAttack,
     }
 }
 
-
-
 const Player = (name) => {
     return {
+        name: name,
         active: false,
         attack(e) {
             const x = e.target.dataset.index.charAt(0)
@@ -176,13 +182,11 @@ const Player = (name) => {
         randomAttack(size) {
             const x = '' + Math.floor(Math.random() * size)
             const y = '' + Math.floor(Math.random() * size)
+            console.log(x, y)
             return {x, y}
         }
     }
 }
-
-
-
 
 // UI
 const contentDIV = document.querySelector('.content')
@@ -190,14 +194,17 @@ const boardsDIV = document.querySelector('.boards-wrapper')
 const userBoardDIV = document.querySelector('.user-board')
 const enemyBoardDIV = document.querySelector('.enemy-board')
 
-const playGame = () => {
+const Game = () => {
     const enemyBoard = Gameboard(10)
     const userBoard = Gameboard(10)
-    console.log(userBoard.board)
+    const boards = [userBoard, enemyBoard]
+    console.log(boards)
     console.log(userBoard)
     const enemy = Player('Computer')
     const user = Player('Kurt')
+    user.active = true
 
+    // DOM
     const createBoardUI = (userBoard, enemyBoard) => {
         userBoard.board.forEach(row => {
             row.forEach(position => {
@@ -226,6 +233,7 @@ const playGame = () => {
             })
         })    
     }
+    createBoardUI(userBoard, enemyBoard)
 
     const updateUI = () => {
         const userPositionsNL = document.querySelectorAll('.user-position')
@@ -268,74 +276,70 @@ const playGame = () => {
         })
     }
     
-    const computerMove = () => {
-        let coordinates = enemy.randomAttack(userBoard.size)
-        let { x, y } = coordinates 
-        console.log(userBoard.moves)
+    // util
+    
+    const gameMoves = async () => {
         
-        
-        // infinte loop, how fix?
-        while (userBoard.moves.includes(x + y)){
-            coordinates = enemy.randomAttack(userBoard.size)
-            let { x, y } = coordinates
-            console.log('duplicate')
+        const computerMove = () => {
+            console.log('computer move')
+            return enemy.randomAttack(userBoard.size)
         }
+
+        const userMove = async () => {
+            return new Promise((resolve) => {
+                enemyBoardDIV.addEventListener('click', function clickListener(e) {
+                    const {x, y} = user.attack(e)
+                    enemyBoardDIV.removeEventListener('click', clickListener)
+                    resolve({x, y})    
+                })    
+            })
+        }
+        let result
+        user.active ? result = userMove() : result = computerMove()
+        return result
+    }
+    
+    
+    const gameLoop = async () => {
+        while (true) {
+        
+            let otherBoard
+            user.active ? otherBoard = enemyBoard : otherBoard = userBoard
             
-        userBoard.board.forEach(row => {
-            row.forEach(position => {
-                if (position.index === x + y && position.occupied) {
-                    position.hit = true
-                    userBoard.ships.forEach(ship => {
-                        ship.hit(x,y)
-                    })
-                } else if (position.index === x + y && !position.occupied) {
-                    position.miss = true
-                    enemy.active = false
+            while (true) {
+                const {x, y} = await gameMoves()
+                const result = otherBoard.receiveAttack(x, y)
+                if(result === 'miss' && user.active){
+                    user.active = false
+                    enemy.active = true
+                    console.log('user ' + result)
+                    updateUI()
+                    break
+                } else if(result === 'miss' && enemy.active){
                     user.active = true
-                }
-            })
-        })
-        userBoard.moves.push(x + y)
-        updateUI()
+                    enemy.active = false
+                    console.log('enemy ' + result)
+                    updateUI()
+                    break
+                } else {
+                    updateUI()
+                    break
+                }  
+            }
+
+            const activeWin = otherBoard.gameOver()
+            if (activeWin) {
+                return user.active ? user.name : enemy.name
+            }
+        }            
     }
-    
-    const userMove = () => {
-        enemyBoardDIV.addEventListener('click', (e) => {
-            enemyBoardDIV.removeEventListener('click', userMove)
-            const coordinates = user.attack(e)
-            const {x,y} = coordinates
-            enemyBoard.board.forEach(row => {
-                row.forEach(position => {
-                    if (position.index === x + y && position.occupied) {
-                        position.hit = true
-                        enemyBoard.ships.forEach(ship => {
-                            ship.hit(x,y)
-                        })
-                    } else if (position.index === x + y && !position.occupied) {
-                        console.log('miss')
-                        position.miss = true
-                        user.active = false
-                        enemy.active = true
-                        computerMove()                        
-                    }
-                })
-            })
-            enemyBoard.moves.push(x + y)
-            updateUI()
 
-        })
+   return {
+       gameLoop
     }
-    userMove()
-
-    
-
-    createBoardUI(userBoard, enemyBoard)
-    // user.active = true
-    // if (user.active) {
-    //     userMove()
-    // } else if (enemy.active) {
-    //     computerMove()
-    // }
 }
 
-playGame()
+const game = Game()
+game.gameLoop().then(result => {
+    alert(`${result} wins!`)
+})
